@@ -8,7 +8,6 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineSignal,
   HiOutlinePhone,
-  HiOutlineUserGroup,
   HiOutlineBookmark,
   HiOutlineCog6Tooth,
   HiChevronDown,

@@ -4,9 +4,7 @@ import useUserStore from '../../store/useUserStore';
 import useThemeStore from '../../store/themeStore';
 import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaTimes, FaVideo, FaVideoSlash } from 'react-icons/fa'
 import {
-    playIncomingRingtone,
     stopIncomingRingtone,
-    playOutgoingRingtone,
     stopOutgoingRingtone,
     stopAllCallSounds
 } from '../../utils/callSounds';

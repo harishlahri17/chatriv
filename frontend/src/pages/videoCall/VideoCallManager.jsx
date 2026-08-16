@@ -4,7 +4,6 @@ import useUserStore from '../../store/useUserStore';
 import VideoCallModal from './VideoCallModal'
 import {
     playIncomingRingtone,
-    stopIncomingRingtone,
     playOutgoingRingtone,
     stopOutgoingRingtone
 } from '../../utils/callSounds';
