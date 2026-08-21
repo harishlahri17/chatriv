@@ -126,7 +126,7 @@ export const useChatStore = create((set, get) => ({
     },
 
     setCurrentUser: (user) => set({ currentUser: user }),
-    
+
 
     fetchConversations: async () => {
         set({ loading: true, error: null });
@@ -210,7 +210,7 @@ export const useChatStore = create((set, get) => ({
             conversation: conversationId,
             imageOrVideoUrl: media && typeof media !== 'string' ? URL.createObjectURL(media) : null,
             content: content,
-            contentType: media ? media.type.startsWith("image") ? "image" : "video" : "text",
+            contentType: media ? (media.type.startsWith("image") ? "image" : media.type.startsWith("audio") ? "audio" : "video") : "text",
             createdAt: new Date().toISOString(),
             messageStatus,
         }
@@ -346,7 +346,7 @@ export const useChatStore = create((set, get) => ({
                 emoji,
                 userId: currentUser?._id
             })
-           
+
         }
     },
 

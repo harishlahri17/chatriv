@@ -126,7 +126,7 @@ export default function Sidebar() {
           <BsChatDotsFill className="h-5 w-5 text-white" />
         </div>
         <span className={`text-lg font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
-          Chatriv
+          ChatRiv
         </span>
       </div>
 

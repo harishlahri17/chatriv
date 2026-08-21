@@ -12,13 +12,14 @@ cloudinary.config({
 });
 
 const uploadFileToClodinary = (file) => {
+    const isMedia = file.mimetype.startsWith('video') || file.mimetype.startsWith('audio');
     const options = {
-        resource_type: file.mimetype.startsWith('video') ? 'video' : 'image',
+        resource_type: isMedia ? 'video' : 'image',
     }
     return new Promise((resolve, reject) => {
-        const uploader = file.mimetype.startsWith('video') ? cloudinary.uploader.upload_large : cloudinary.uploader.upload;
+        const uploader = isMedia ? cloudinary.uploader.upload_large : cloudinary.uploader.upload;
         uploader(file.path, options, (error, result) => {
-            fs.unlink(file.path, () => {})
+            fs.unlink(file.path, () => { })
             if (error) {
                 return reject(error);
             }

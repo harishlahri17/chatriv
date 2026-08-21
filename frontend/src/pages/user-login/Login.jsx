@@ -272,7 +272,7 @@ export default function Login() {
                         <BsChatDotsFill className="w-8 h-8 text-white" />
                     </motion.div>
                     <h1 className={`text-2xl font-bold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
-                        Chatriv
+                        ChatRiv
                     </h1>
                     <p className={`text-xs mt-1 text-center ${isDark ? "text-gray-400" : "text-gray-500"}`}>
                         {step === 1 && "Connect with friends and family seamlessly"}

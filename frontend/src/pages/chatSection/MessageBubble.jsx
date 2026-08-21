@@ -1,10 +1,302 @@
 import { format } from 'date-fns';
 import React, { useRef, useState } from 'react'
-import { FaCheck, FaCheckDouble, FaPlus, FaRegCopy, FaSmile } from 'react-icons/fa';
+import { FaCheck, FaCheckDouble, FaPlus, FaRegCopy, FaSmile, FaPlay, FaPause, FaMicrophone } from 'react-icons/fa';
 import { HiDotsVertical } from "react-icons/hi";
 import useOutsideClick from '../../hooks/useOutsideClick';
 import { RxCross2 } from "react-icons/rx";
-import EmojiPicker from 'emoji-picker-react'
+import EmojiPicker from 'emoji-picker-react';
+
+const VoiceNotePlayer = ({ audioUrl, isUserMessage, theme }) => {
+    const audioRef = useRef(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [playbackRate, setPlaybackRate] = useState(1);
+
+    const isDark = theme === "dark";
+
+    // Theme-aware colors matching Chatriv app theme
+    const colors = {
+        primary: isUserMessage
+            ? "#6C5CE7"
+            : isDark
+                ? "#8C7CFF"
+                : "#6C5CE7",
+
+        waveActive: isUserMessage
+            ? "#5A4AD1"
+            : isDark
+                ? "#8C7CFF"
+                : "#6C5CE7",
+
+        waveInactive: isUserMessage
+            ? "bg-[#6C5CE7]/30"
+            : isDark
+                ? "bg-white/20"
+                : "bg-gray-300",
+
+        iconColor: isUserMessage
+            ? "#4A3B9F"
+            : isDark
+                ? "#8C7CFF"
+                : "#6C5CE7",
+
+        speedBg: isUserMessage
+            ? "bg-[#6C5CE7]/20"
+            : isDark
+                ? "bg-white/10"
+                : "bg-[#6C5CE7]/15",
+
+        speedText: isUserMessage
+            ? "text-[#302470]"
+            : isDark
+                ? "text-gray-200"
+                : "text-[#5A4AD1]",
+    };
+
+    const waveformHeights = [
+        25, 45, 75, 40, 85, 60, 95, 35, 70, 50,
+        90, 30, 100, 65, 80, 45, 90, 55, 85, 40,
+        75, 30, 95, 50, 80, 40, 60, 35, 70, 45,
+        85, 30, 65, 35
+    ];
+
+    const togglePlay = () => {
+        if (!audioRef.current) return;
+
+        if (isPlaying) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+        } else {
+            audioRef.current.play();
+            setIsPlaying(true);
+        }
+    };
+
+    const handleTimeUpdate = () => {
+        if (audioRef.current) {
+            const cur = audioRef.current.currentTime;
+            setCurrentTime(cur);
+
+            const d = audioRef.current.duration;
+
+            if (isFinite(d) && d > 0) {
+                setDuration(d);
+            } else if (cur > 0) {
+                setDuration((prev) => Math.max(prev, cur));
+            }
+        }
+    };
+
+    const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+            const d = audioRef.current.duration;
+
+            if (isFinite(d) && d > 0) {
+                setDuration(d);
+            } else if (d === Infinity) {
+                audioRef.current.currentTime = 1e101;
+
+                const handleSeek = () => {
+                    if (audioRef.current) {
+                        audioRef.current.removeEventListener(
+                            "timeupdate",
+                            handleSeek
+                        );
+
+                        audioRef.current.currentTime = 0;
+
+                        if (isFinite(audioRef.current.duration)) {
+                            setDuration(audioRef.current.duration);
+                        }
+                    }
+                };
+
+                audioRef.current.addEventListener(
+                    "timeupdate",
+                    handleSeek
+                );
+            }
+        }
+    };
+
+    const handleEnded = () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+    };
+
+    const handleWaveformClick = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percentage = Math.max(
+            0,
+            Math.min(1, clickX / rect.width)
+        );
+
+        const validDur =
+            isFinite(duration) && duration > 0
+                ? duration
+                : 0;
+
+        if (audioRef.current && validDur > 0) {
+            const newTime = percentage * validDur;
+
+            audioRef.current.currentTime = newTime;
+            setCurrentTime(newTime);
+        }
+    };
+
+    const toggleSpeed = () => {
+        const rates = [1, 1.5, 2];
+
+        const nextIndex =
+            (rates.indexOf(playbackRate) + 1) % rates.length;
+
+        const newRate = rates[nextIndex];
+
+        setPlaybackRate(newRate);
+
+        if (audioRef.current) {
+            audioRef.current.playbackRate = newRate;
+        }
+    };
+
+    const formatTime = (secs) => {
+        if (
+            isNaN(secs) ||
+            secs < 0 ||
+            !isFinite(secs)
+        ) {
+            return "0:00";
+        }
+
+        const minutes = Math.floor(secs / 60);
+        const seconds = Math.floor(secs % 60);
+
+        return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    };
+
+    const validDuration =
+        isFinite(duration) && duration > 0
+            ? duration
+            : 0;
+
+    const progressPercent = validDuration
+        ? Math.max(
+            0,
+            Math.min(
+                100,
+                (currentTime / validDuration) * 100
+            )
+        )
+        : 0;
+
+    return (
+        <div className="flex items-center gap-3 py-1 px-1 min-w-[240px] max-w-xs">
+
+            <audio
+                ref={audioRef}
+                src={audioUrl}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
+                onEnded={handleEnded}
+            />
+
+            {/* Play / Pause */}
+            <button
+                onClick={togglePlay}
+                type="button"
+                style={{
+                    backgroundColor: colors.primary
+                }}
+                className="w-10 h-10 rounded-full hover:opacity-90 text-white flex items-center justify-center transition-all duration-200 shadow-md active:scale-95 flex-shrink-0"
+            >
+                {isPlaying ? (
+                    <FaPause size={13} />
+                ) : (
+                    <FaPlay
+                        size={13}
+                        className="ml-0.5"
+                    />
+                )}
+            </button>
+
+            {/* Waveform + Info */}
+            <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+
+                {/* Waveform */}
+                <div
+                    onClick={handleWaveformClick}
+                    className="relative flex items-center justify-between gap-[2px] h-8 cursor-pointer py-1 group/wave w-full"
+                    title="Click to seek"
+                >
+                    {waveformHeights.map(
+                        (heightPercent, idx) => {
+                            const barPercent =
+                                (idx /
+                                    (waveformHeights.length - 1)) *
+                                100;
+
+                            const isPlayed =
+                                barPercent <= progressPercent;
+
+                            return (
+                                <span
+                                    key={idx}
+                                    style={{
+                                        height: `${heightPercent}%`,
+                                        backgroundColor:
+                                            isPlayed
+                                                ? colors.waveActive
+                                                : undefined
+                                    }}
+                                    className={`w-[2.5px] rounded-full transition-colors duration-75 ${
+                                        !isPlayed
+                                            ? colors.waveInactive
+                                            : ""
+                                    }`}
+                                />
+                            );
+                        }
+                    )}
+                </div>
+
+                {/* Time + Speed */}
+                <div className="flex items-center justify-between text-[11px] font-medium leading-none opacity-80">
+
+                    <span className="flex items-center gap-1 font-mono">
+
+                        <FaMicrophone
+                            size={10}
+                            style={{
+                                color: colors.iconColor
+                            }}
+                        />
+
+                        <span>
+                            {formatTime(
+                                isPlaying
+                                    ? currentTime
+                                    : duration || currentTime
+                            )}
+                        </span>
+
+                    </span>
+
+                    {/* Speed */}
+                    <button
+                        onClick={toggleSpeed}
+                        type="button"
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-all active:scale-95 ${colors.speedBg} ${colors.speedText}`}
+                    >
+                        {playbackRate}x
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function MessageBubble({ message, theme, onReact, currentUser, deleteMessage }) {
     const quickReactions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
@@ -69,6 +361,13 @@ export default function MessageBubble({ message, theme, onReact, currentUser, de
                             />
                             <p className='mt-1'>{message.content}</p>
                         </div>
+                    )}
+                    {message.contentType === 'audio' && (
+                        <VoiceNotePlayer
+                            audioUrl={message.imageOrVideoUrl}
+                            isUserMessage={isUserMessage}
+                            theme={theme}
+                        />
                     )}
                 </div>
                 <div className='self-end flex items-center justify-end gap-1 text-xs opacity-60 mt-2 ml-2'>

@@ -32,6 +32,8 @@ const sendMessage = async (req, res) => {
                 contentType = "image"
             } else if (file.mimetype.startsWith('video')) {
                 contentType = "video"
+            } else if (file.mimetype.startsWith('audio')) {
+                contentType = "audio"
             } else {
                 return res.status(400).json({ success: false, message: "File type not support" });
             }
@@ -73,7 +75,7 @@ const sendMessage = async (req, res) => {
             }
         }
 
-        return res.status(201).json({ success: true, message: "Message send successfully!", data:populateMessage });
+        return res.status(201).json({ success: true, message: "Message send successfully!", data: populateMessage });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, message: "Inernal server error" });
@@ -95,7 +97,7 @@ const getConversation = async (req, res) => {
                 }
             }).sort({ updatedAt: -1 });
 
-        return res.status(201).json({ success: true, message: "Conversation fetched successfully!", data:conversation });
+        return res.status(201).json({ success: true, message: "Conversation fetched successfully!", data: conversation });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, message: "Inernal server error" });
@@ -128,7 +130,7 @@ const getMessages = async (req, res) => {
             messageStatus: { $in: ["send", "delivered"] }
         }, { $set: { messageStatus: "read" } });
 
-        return res.status(200).json({ success: true, message: "Message retrived!", data:message });
+        return res.status(200).json({ success: true, message: "Message retrived!", data: message });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, message: "Inernal server error" });
@@ -152,10 +154,10 @@ const marksAsRead = async (req, res) => {
 
         // notify to original sender
         if (req.io && req.socketUserMap) {
-            for(const message of messages){
+            for (const message of messages) {
                 const senderSocketId = req.socketUserMap.get(message.sender.toString());
-                if(senderSocketId){
-                    const updateMessage ={
+                if (senderSocketId) {
+                    const updateMessage = {
                         _id: message._id,
                         messageStatus: "read"
                     };
@@ -187,10 +189,10 @@ const deleteMessage = async (req, res) => {
         }
         await message.deleteOne();
 
-                //emit socket event 
+        //emit socket event 
         if (req.io && req.socketUserMap) {
             const receiverSocketId = req.socketUserMap.get(message.receiver.toString());
-            if(receiverSocketId){
+            if (receiverSocketId) {
                 req.io.to(receiverSocketId).emit("message_deleted", messageId);
             }
         }
