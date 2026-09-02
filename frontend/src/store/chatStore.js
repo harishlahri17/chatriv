@@ -105,17 +105,18 @@ export const useChatStore = create((set, get) => ({
         const { conversations } = get();
         if (conversations?.data?.length > 0) {
             conversations.data?.forEach(conv => {
-                const otherUsers = conv.participants.find(
-                    (p) => p._id !== get().currentUser._id
+                const otherUsers = conv.participants?.find(
+                    (p) => p._id !== get().currentUser?._id
                 );
 
-                if (otherUsers._id) {
+                if (otherUsers?._id) {
                     socket.emit("get_user_status", otherUsers._id, (status) => {
+                        if (!status?.userId) return;
                         set((state) => {
                             const newOnlineUsers = new Map(state.onlineUsers);
-                            newOnlineUsers.set(state.userId, {
-                                isOnline: state.isOnline,
-                                lastSeen: state.lastSeen
+                            newOnlineUsers.set(status.userId, {
+                                isOnline: status.isOnline,
+                                lastSeen: status.lastSeen
                             });
                             return { onlineUsers: newOnlineUsers }
                         })
